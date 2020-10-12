@@ -21,8 +21,20 @@ async function handleRequest(request) {
     return new Response('Not found', { status: 404 })
   }
   const body = await request.json()
-  if (path === '/encrypt') return handleEncryptRequest(body)
-  if (path === '/decrypt') return handleDecryptRequest(body)
+  if (path === '/encrypt') {
+    if (Object.keys(body).includes('text') && Object.keys(body).includes('pp')) {
+      return handleEncryptRequest(body)
+    } else {
+      return new Response ('Input variables missing', {status: 400})
+    }
+  }
+  if (path === '/decrypt') {
+    if (Object.keys(body).includes('enc') && Object.keys(body).includes('pp') && Object.keys(body).includes('iv')) {
+      return handleDecryptRequest(body)
+    } else {
+      return new Response ('Input variables missing', {status: 400})
+    }
+  }
 }
 
 async function handleEncryptRequest(body) {
