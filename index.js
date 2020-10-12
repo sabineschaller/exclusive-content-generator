@@ -11,6 +11,10 @@ async function handleRequest(request) {
   if (request.method !== 'POST') {
     return new Response('Not found', { status: 404 })
   }
+  const headers = new Map(request.headers)
+  if (headers.get('content-type') !== 'application/json') {
+    return new Response('Unsupported content type. Use application/json', { status: 415 })
+  }
   const url = new URL(request.url)
   const path = url.pathname
   if (path !== '/encrypt' & path !== '/decrypt') {
