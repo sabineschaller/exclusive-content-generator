@@ -22,14 +22,23 @@ async function handleRequest(request) {
   }
   const body = await request.json()
   if (path === '/encrypt') {
-    if (Object.keys(body).includes('text') && Object.keys(body).includes('pp')) {
+    if (
+      Object.keys(body).includes('pp') &&
+      Object.keys(body).includes('pt')
+    ) {
       return handleEncryptRequest(body)
     } else {
       return new Response ('Input variables missing', {status: 400})
     }
   }
   if (path === '/decrypt') {
-    if (Object.keys(body).includes('enc') && Object.keys(body).includes('pp') && Object.keys(body).includes('iv')) {
+    if (
+      Object.keys(body).includes('pp') &&
+      Object.keys(body).includes('vr') &&
+      Object.keys(body).includes('bi') &&
+      Object.keys(body).includes('ct') &&
+      Object.keys(body).includes('iv')
+    ) {
       return handleDecryptRequest(body)
     } else {
       return new Response ('Input variables missing', {status: 400})
@@ -38,10 +47,11 @@ async function handleRequest(request) {
 }
 
 async function handleEncryptRequest(body) {
-  const now = Date.now().toString()
-  const enc = await encrypt(encode(body.text), encode(body.pp), encode(now))
+  const iv = Date.now().toString()
+  const enc = await encrypt(encode(body.pt), encode(body.pp), encode(iv))
+  const ct = ab2str(enc)
   return new Response(
-    JSON.stringify({enc: ab2str(enc), iv: now}),
+    JSON.stringify({ct, iv}),
     {
       headers: {"content-type": "application/json;charset=UTF-8"}
     }
@@ -50,13 +60,19 @@ async function handleEncryptRequest(body) {
 
 
 async function handleDecryptRequest(body) {
-  const dec = await decrypt(str2ab(body.enc), encode(body.pp), encode(body.iv))
-  return new Response(
-    JSON.stringify({dec: decode(dec)}),
-    {
-      headers: {"content-type": "application/json;charset=UTF-8"}
-    }
-  )
+  const payment = await verifyReceipt(body.vr, body.bi)
+  if (payment){
+    const dec = await decrypt(str2ab(body.ct), encode(body.pp), encode(body.iv))
+    const pt = decode(dec)
+    return new Response(
+      JSON.stringify({pt}),
+      {
+        headers: {"content-type": "application/json;charset=UTF-8"}
+      }
+    )
+  } else {
+    return new Response('Payment required', { status: 402 })
+  }
 }
 
 function encode(str) {
@@ -130,4 +146,12 @@ async function decrypt(cyphertext, salt, iv) {
     key,
     cyphertext
   );
+}
+
+async function verifyReceipt(verifier, balanceId) {
+  const endpoint = new URL(verifier.endsWith('/')
+    ? `${verifier}balances/${balanceId}:spend`
+    : `${verifier}/balances/${balanceId}:spend`)
+  const res = await fetch(endpoint.href, { method: 'POST', body: '1' })
+  return res.ok ? true : false
 }
