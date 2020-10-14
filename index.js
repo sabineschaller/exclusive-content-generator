@@ -151,6 +151,6 @@ async function verifyReceipt (verifier, balanceId) {
   const endpoint = new URL(verifier.endsWith('/')
     ? `${verifier}balances/${balanceId}:spend`
     : `${verifier}/balances/${balanceId}:spend`)
-  const res = await fetch(endpoint.href, { method: 'POST', body: '1' })
-  return !!res.ok
+  const response = await fetch(endpoint.href, { method: 'POST', body: '1' })
+  return response.ok
 }
