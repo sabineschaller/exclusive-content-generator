@@ -1,13 +1,13 @@
-  /*
+/*
   * Secret nonce, stored in CF worker settings
   * @param {string}  NONCE
-  */ 
+  */
 
 addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request))
 })
 
-async function handleRequest(request) {
+async function handleRequest (request) {
   if (request.method !== 'POST') {
     return new Response('Not found', { status: 404 })
   }
@@ -28,7 +28,7 @@ async function handleRequest(request) {
     ) {
       return handleEncryptRequest(body)
     } else {
-      return new Response ('Input variables missing', {status: 400})
+      return new Response('Input variables missing', { status: 400 })
     }
   }
   if (path === '/decrypt') {
@@ -41,33 +41,32 @@ async function handleRequest(request) {
     ) {
       return handleDecryptRequest(body)
     } else {
-      return new Response ('Input variables missing', {status: 400})
+      return new Response('Input variables missing', { status: 400 })
     }
   }
 }
 
-async function handleEncryptRequest(body) {
+async function handleEncryptRequest (body) {
   const iv = Date.now().toString()
   const enc = await encrypt(encode(body.pt), encode(body.pp), encode(iv))
   const ct = ab2str(enc)
   return new Response(
-    JSON.stringify({ct, iv}),
+    JSON.stringify({ ct, iv }),
     {
-      headers: {"content-type": "application/json;charset=UTF-8"}
+      headers: { 'content-type': 'application/json;charset=UTF-8' }
     }
   )
 }
 
-
-async function handleDecryptRequest(body) {
+async function handleDecryptRequest (body) {
   const payment = await verifyReceipt(body.vr, body.bi)
-  if (payment){
+  if (payment) {
     const dec = await decrypt(str2ab(body.ct), encode(body.pp), encode(body.iv))
     const pt = decode(dec)
     return new Response(
-      JSON.stringify({pt}),
+      JSON.stringify({ pt }),
       {
-        headers: {"content-type": "application/json;charset=UTF-8"}
+        headers: { 'content-type': 'application/json;charset=UTF-8' }
       }
     )
   } else {
@@ -75,83 +74,83 @@ async function handleDecryptRequest(body) {
   }
 }
 
-function encode(str) {
-  const encoder = new TextEncoder("utf-8")
+function encode (str) {
+  const encoder = new TextEncoder('utf-8')
   return encoder.encode(str)
 }
 
-function decode(buf) {
-  const decoder = new TextDecoder("utf-8")
+function decode (buf) {
+  const decoder = new TextDecoder('utf-8')
   return decoder.decode(buf)
 }
 
-function ab2str(buf) {
+function ab2str (buf) {
   return String.fromCharCode.apply(null, new Uint8Array(buf))
 }
-function str2ab(str) {
+function str2ab (str) {
   var buf = new ArrayBuffer(str.length)
   var bufView = new Uint8Array(buf)
-  for (var i=0, strLen=str.length; i < strLen; i++) {
+  for (var i = 0, strLen = str.length; i < strLen; i++) {
     bufView[i] = str.charCodeAt(i)
   }
-  return buf;
+  return buf
 }
 
-async function getKeyMaterial() {
+async function getKeyMaterial () {
   const encoder = new TextEncoder()
   return crypto.subtle.importKey(
-    "raw",
+    'raw',
     encoder.encode(NONCE),
-    "PBKDF2",
+    'PBKDF2',
     false,
-    ["deriveBits", "deriveKey"]
-  );
-}
-
-async function deriveKey(salt) {
-  const keyMaterial = await getKeyMaterial()
-  return crypto.subtle.deriveKey(
-    {
-      "name": "PBKDF2",
-      salt: salt,
-      "iterations": 100000,
-      "hash": "SHA-256"
-    },
-    keyMaterial,
-    { "name": "AES-GCM", "length": 256},
-    false,
-    [ "encrypt", "decrypt" ]
+    ['deriveBits', 'deriveKey']
   )
 }
 
-async function encrypt(plaintext, salt, iv) {
+async function deriveKey (salt) {
+  const keyMaterial = await getKeyMaterial()
+  return crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: salt,
+      iterations: 100000,
+      hash: 'SHA-256'
+    },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  )
+}
+
+async function encrypt (plaintext, salt, iv) {
   const key = await deriveKey(salt)
   return crypto.subtle.encrypt(
     {
-      name: "AES-GCM",
+      name: 'AES-GCM',
       iv: iv
     },
     key,
     plaintext
-  );
+  )
 }
 
-async function decrypt(cyphertext, salt, iv) {
+async function decrypt (cyphertext, salt, iv) {
   const key = await deriveKey(salt)
   return crypto.subtle.decrypt(
     {
-      name: "AES-GCM",
+      name: 'AES-GCM',
       iv: iv
     },
     key,
     cyphertext
-  );
+  )
 }
 
-async function verifyReceipt(verifier, balanceId) {
+async function verifyReceipt (verifier, balanceId) {
   const endpoint = new URL(verifier.endsWith('/')
     ? `${verifier}balances/${balanceId}:spend`
     : `${verifier}/balances/${balanceId}:spend`)
   const res = await fetch(endpoint.href, { method: 'POST', body: '1' })
-  return res.ok ? true : false
+  return !!res.ok
 }
