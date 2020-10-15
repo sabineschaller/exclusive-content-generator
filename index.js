@@ -66,7 +66,12 @@ async function handleDecryptRequest (body) {
     return new Response(
       JSON.stringify({ pt }),
       {
-        headers: { 'content-type': 'application/json;charset=UTF-8' }
+        headers: { 
+          'Content-Type': 'application/json;charset=UTF-8',
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET,HEAD,POST,OPTIONS",
+          "Access-Control-Max-Age": "86400",
+        }
       }
     )
   } else {
