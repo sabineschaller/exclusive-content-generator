@@ -3,46 +3,56 @@
   * @param {string}  NONCE
   */
 
+const headers = { 
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST,OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Max-Age': '86400',
+}
+
 addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request))
 })
 
 async function handleRequest (request) {
-  if (request.method !== 'POST') {
-    return new Response('Not found', { status: 404 })
-  }
-  const headers = new Map(request.headers)
-  if (headers.get('content-type') !== 'application/json') {
-    return new Response('Unsupported content type. Use application/json', { status: 415 })
-  }
-  const url = new URL(request.url)
-  const path = url.pathname
-  if (path !== '/encrypt' & path !== '/decrypt') {
-    return new Response('Not found', { status: 404 })
-  }
-  const body = await request.json()
-  if (path === '/encrypt') {
-    if (
-      Object.keys(body).includes('pp') &&
-      Object.keys(body).includes('pt')
-    ) {
-      return handleEncryptRequest(body)
-    } else {
-      return new Response('Input variables missing', { status: 400 })
+  if (request.method === 'POST') {
+    const headers = new Map(request.headers)
+    if (headers.get('content-type') !== 'application/json') {
+      return new Response('Unsupported content type. Use application/json', { headers, status: 415 })
     }
-  }
-  if (path === '/decrypt') {
-    if (
-      Object.keys(body).includes('pp') &&
-      Object.keys(body).includes('vr') &&
-      Object.keys(body).includes('bi') &&
-      Object.keys(body).includes('ct') &&
-      Object.keys(body).includes('iv')
-    ) {
-      return handleDecryptRequest(body)
-    } else {
-      return new Response('Input variables missing', { status: 400 })
+    const url = new URL(request.url)
+    const path = url.pathname
+    if (path !== '/encrypt' & path !== '/decrypt') {
+      return new Response('Not found', { headers, status: 404 })
     }
+    const body = await request.json()
+    if (path === '/encrypt') {
+      if (
+        Object.keys(body).includes('pp') &&
+        Object.keys(body).includes('pt')
+      ) {
+        return handleEncryptRequest(body)
+      } else {
+        return new Response('Input variables missing', { headers, status: 400 })
+      }
+    }
+    if (path === '/decrypt') {
+      if (
+        Object.keys(body).includes('pp') &&
+        Object.keys(body).includes('vr') &&
+        Object.keys(body).includes('bi') &&
+        Object.keys(body).includes('ct') &&
+        Object.keys(body).includes('iv')
+      ) {
+        return handleDecryptRequest(body)
+      } else {
+        return new Response('Input variables missing', { headers, status: 400 })
+      }
+    }
+  } else if (request.method === 'OPTIONS') {
+    return new Response('OK', { headers })
+  } else {
+    return new Response('Not found', { headers, status: 404 })
   }
 }
 
@@ -53,7 +63,7 @@ async function handleEncryptRequest (body) {
   return new Response(
     JSON.stringify({ ct, iv }),
     {
-      headers: { 'content-type': 'application/json;charset=UTF-8' }
+      headers: { ...headers, 'Content-Type': 'application/json;charset=UTF-8' }
     }
   )
 }
@@ -66,16 +76,11 @@ async function handleDecryptRequest (body) {
     return new Response(
       JSON.stringify({ pt }),
       {
-        headers: { 
-          'Content-Type': 'application/json;charset=UTF-8',
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET,HEAD,POST,OPTIONS",
-          "Access-Control-Max-Age": "86400",
-        }
+        headers: { ...headers, 'Content-Type': 'application/json;charset=UTF-8' }
       }
     )
   } else {
-    return new Response('Payment required', { status: 402 })
+    return new Response('Payment required', {headers, status: 402 })
   }
 }
 
