@@ -59,7 +59,7 @@ async function handleRequest (request) {
 async function handleEncryptRequest (body) {
   const iv = Date.now().toString()
   const enc = await encrypt(encode(body.pt), encode(body.pp), encode(iv))
-  const ct = ab2str(enc)
+  const ct = btoa(ab2str(enc))
   return new Response(
     JSON.stringify({ ct, iv }),
     {
@@ -71,7 +71,7 @@ async function handleEncryptRequest (body) {
 async function handleDecryptRequest (body) {
   const payment = await verifyReceipt(body.vr, body.bi)
   if (payment) {
-    const dec = await decrypt(str2ab(body.ct), encode(body.pp), encode(body.iv))
+    const dec = await decrypt(str2ab(atob(body.ct)), encode(body.pp), encode(body.iv))
     const pt = decode(dec)
     return new Response(
       JSON.stringify({ pt }),
