@@ -124,7 +124,7 @@ async function deriveKey(salt) {
     {
       name: 'PBKDF2',
       salt: salt,
-      iterations: 100000,
+      iterations: 1000,
       hash: 'SHA-256',
     },
     keyMaterial,
