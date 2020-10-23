@@ -1,6 +1,6 @@
 # Exclusive Content Generator Worker
 
-This cloudflare worker will encrypt any plain text given a payment pointer. Furthermore, it will decrypt the resulting cyphertext if it can verify payment by a receipt verifier.
+This cloudflare worker will encrypt any plain text given a payment pointer. Furthermore, it will decrypt the resulting cypher text if it can verify payment by a receipt verifier.
 
 ## Testing
 
