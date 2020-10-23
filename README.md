@@ -4,6 +4,8 @@ This cloudflare worker will encrypt any plain text given a payment pointer. Furt
 
 ## Testing
 
+Configure your `wrangler.toml` file.
+
 ```sh
 npm install
 wrangler secret put MASTERKEY
@@ -12,6 +14,8 @@ wrangler preview --watch
 ```
 
 ## Deploying
+
+Configure your `wrangler.toml` file.
 
 ```sh
 npm install
